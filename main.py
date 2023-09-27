@@ -68,9 +68,21 @@ class KMeans():
         return variance
             
     def compare_variance(self, iteration_variance):
-        # Find the configuration with the lowest total variance
-        best_variance, best_k = min(iteration_variance, key=lambda x: np.sum(x[0]))
-        # Return the clusters and k value of the best configuration
+        # Convert the iteration_variance list into a numpy array
+        iteration_variance = np.array(iteration_variance)
+
+        # Get the total variances
+        total_variances = np.array([np.sum(x[0]) for x in iteration_variance])
+
+        # Calculate the difference in total variances between each pair of consecutive K's
+        diff_variances = np.diff(total_variances)
+
+        # Calculate the difference in total variances between each pair of consecutive differences
+        diff_diff_variances = np.diff(diff_variances)
+
+        # The optimal K is where the second difference is maximum (i.e., the elbow point)
+        best_k = np.argmax(diff_diff_variances) + 1
+
         return best_k
     
     def plot_fig(self, X, y_pred):
@@ -84,14 +96,18 @@ class KMeans():
             y_pred = kmeans.fit(X)
             y_pred_arr.append(y_pred)
             clusters = kmeans.create_clusters(X, kmeans.initialize_centroids(X))
-            variance_arr.append([self.calculate_variance(X, clusters), idx])
+            total_variance = np.sum(self.calculate_variance(X, clusters))  
+            print("k: ", idx + 1)
+            print("total variance: ", total_variance)
+            variance_arr.append([total_variance, idx])
+            
         best_k = self.compare_variance(variance_arr)
-        return y_pred_arr[best_k], best_k + 1
+        return y_pred_arr[best_k], best_k + 1  # best_k + 1 because we started from 1 cluster
     
 def main():
     np.random.seed(10)
     blob_num_clusters = 5
-    k = 5
+    k = 8
     X, _ = make_blobs(n_samples=1000, n_features=2, centers=blob_num_clusters)
 
     #Kmeans = KMeansClustering(X, k, 100, True)
